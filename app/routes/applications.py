@@ -25,11 +25,18 @@ def create_application(
 
     return new_application
 
-
 @router.get("/", response_model=list[ApplicationResponse])
-def get_applications(db: Session = Depends(get_db)):
-    applications = db.query(Application).all()
-    return applications
+def get_applications(
+    status: str | None = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Application)
+
+    if status:
+        query = query.filter(Application.status == status)
+
+    return query.all()
+
 
 @router.get("/{application_id}", response_model=ApplicationResponse)
 def get_application(
