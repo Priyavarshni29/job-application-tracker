@@ -13,8 +13,10 @@ router = APIRouter(
 
 @router.get("/")
 def get_analytics(db: Session = Depends(get_db)):
+    # Total applications
     total = db.query(func.count(Application.id)).scalar()
 
+    # Applications grouped by status
     status_counts = (
         db.query(
             Application.status,
@@ -29,6 +31,22 @@ def get_analytics(db: Session = Depends(get_db)):
         for status, count in status_counts
     }
 
+    # Applications grouped by company
+    company_counts = (
+        db.query(
+            Application.company,
+            func.count(Application.id)
+        )
+        .group_by(Application.company)
+        .all()
+    )
+
+    by_company = {
+        company: count
+        for company, count in company_counts
+    }
+
+    # Interview conversion rate
     interview_count = by_status.get("Interview", 0)
 
     conversion_rate = (
@@ -40,5 +58,6 @@ def get_analytics(db: Session = Depends(get_db)):
     return {
         "total_applications": total,
         "by_status": by_status,
+        "by_company": by_company,
         "interview_conversion_rate": round(conversion_rate, 2)
     }
