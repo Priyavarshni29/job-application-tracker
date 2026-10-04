@@ -28,14 +28,23 @@ def create_application(
 @router.get("/", response_model=list[ApplicationResponse])
 def get_applications(
     status: str | None = None,
+    sort: str = "desc",
     db: Session = Depends(get_db)
 ):
     query = db.query(Application)
 
+    # Filter by status
     if status:
         query = query.filter(Application.status == status)
 
+    # Sort by application date
+    if sort == "asc":
+        query = query.order_by(Application.application_date.asc())
+    else:
+        query = query.order_by(Application.application_date.desc())
+
     return query.all()
+
 
 
 @router.get("/{application_id}", response_model=ApplicationResponse)
