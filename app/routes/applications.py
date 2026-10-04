@@ -47,3 +47,49 @@ def get_application(
         )
 
     return application
+
+@router.put("/{application_id}", response_model=ApplicationResponse)
+def update_application(
+    application_id: int,
+    application_data: ApplicationCreate,
+    db: Session = Depends(get_db)
+):
+    application = db.query(Application).filter(
+        Application.id == application_id
+    ).first()
+
+    if application is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Application not found"
+        )
+
+    for field, value in application_data.model_dump().items():
+        setattr(application, field, value)
+
+    db.commit()
+    db.refresh(application)
+
+    return application
+
+@router.delete("/{application_id}")
+def delete_application(
+    application_id: int,
+    db: Session = Depends(get_db)
+):
+    application = db.query(Application).filter(
+        Application.id == application_id
+    ).first()
+
+    if application is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Application not found"
+        )
+
+    db.delete(application)
+    db.commit()
+
+    return {
+        "message": "Application deleted successfully"
+    }
