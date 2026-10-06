@@ -21,13 +21,16 @@ class ApplicationCreate(ApplicationBase):
 
 class ApplicationResponse(ApplicationBase):
     id: int
+    is_archived: bool
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class UserCreate(BaseModel):
     name: str
     email: str
     password: str
+
 
 class UserLogin(BaseModel):
     email: str

@@ -3,7 +3,9 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.security import get_current_user_id
 from app.models import Application
+
 
 router = APIRouter(
     prefix="/analytics",
@@ -12,9 +14,21 @@ router = APIRouter(
 
 
 @router.get("/")
-def get_analytics(db: Session = Depends(get_db)):
+def get_analytics(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    # Only applications belonging to the logged-in user
+    # Archived applications are intentionally included
+    # because analytics should preserve application history.
+    user_applications = Application.user_id == current_user_id
+
     # Total applications
-    total = db.query(func.count(Application.id)).scalar()
+    total = (
+        db.query(func.count(Application.id))
+        .filter(user_applications)
+        .scalar()
+    )
 
     # Applications grouped by status
     status_counts = (
@@ -22,6 +36,7 @@ def get_analytics(db: Session = Depends(get_db)):
             Application.status,
             func.count(Application.id)
         )
+        .filter(user_applications)
         .group_by(Application.status)
         .all()
     )
@@ -37,6 +52,7 @@ def get_analytics(db: Session = Depends(get_db)):
             Application.company,
             func.count(Application.id)
         )
+        .filter(user_applications)
         .group_by(Application.company)
         .all()
     )
